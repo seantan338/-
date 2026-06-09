@@ -17,6 +17,7 @@ const CATEGORIES = [
 const TYPES = CATEGORIES.filter((c) => c.id !== "all");
 
 const STORAGE_KEY = "inspiration-board-items-v1";
+const THEME_KEY = "inspiration-board-theme";
 
 // ---------- 状态 ----------
 let items = load();
@@ -398,6 +399,109 @@ function fallbackCopy(text, done) {
   document.body.removeChild(ta);
 }
 
+// ============================================================
+//  主题（深色 / 浅色）
+// ============================================================
+function applyTheme(theme) {
+  if (theme === "dark") {
+    document.documentElement.setAttribute("data-theme", "dark");
+    $("#themeBtn").textContent = "☀️";
+  } else {
+    document.documentElement.removeAttribute("data-theme");
+    $("#themeBtn").textContent = "🌙";
+  }
+}
+function initTheme() {
+  let theme = localStorage.getItem(THEME_KEY);
+  if (!theme) {
+    theme = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches
+      ? "dark" : "light";
+  }
+  applyTheme(theme);
+}
+function toggleTheme() {
+  const next = document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark";
+  localStorage.setItem(THEME_KEY, next);
+  applyTheme(next);
+}
+
+// ============================================================
+//  导出 / 导入备份
+// ============================================================
+function exportBackup() {
+  if (items.length === 0) { showToast("还没有可导出的灵感"); return; }
+  const payload = {
+    app: "inspiration-board",
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    items,
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  const stamp = new Date().toISOString().slice(0, 10);
+  a.href = url;
+  a.download = `灵感板备份-${stamp}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast(`已导出 ${items.length} 条灵感`);
+}
+
+function importBackup(file) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const data = JSON.parse(e.target.result);
+      const incoming = Array.isArray(data) ? data : data.items;
+      if (!Array.isArray(incoming)) throw new Error("格式不正确");
+
+      // 规范化并校验每一条
+      const cleaned = incoming
+        .filter((it) => it && typeof it.content === "string" && it.content.trim())
+        .map((it) => ({
+          id: it.id || uid(),
+          type: TYPES.some((t) => t.id === it.type) ? it.type : "title",
+          content: String(it.content),
+          tags: Array.isArray(it.tags) ? it.tags.map(String) : [],
+          source: it.source ? String(it.source) : "",
+          createdAt: typeof it.createdAt === "number" ? it.createdAt : Date.now(),
+          updatedAt: it.updatedAt,
+        }));
+
+      if (cleaned.length === 0) { showToast("文件里没有有效的灵感"); return; }
+
+      const mode = items.length === 0
+        ? "replace"
+        : confirm(
+            `检测到 ${cleaned.length} 条灵感。\n\n点「确定」与现有 ${items.length} 条合并，\n点「取消」用导入内容覆盖全部。`
+          ) ? "merge" : "replace";
+
+      if (mode === "merge") {
+        const existIds = new Set(items.map((i) => i.id));
+        let added = 0;
+        cleaned.forEach((it) => {
+          if (existIds.has(it.id)) it.id = uid(); // 避免 id 冲突
+          items.push(it);
+          added++;
+        });
+        showToast(`已合并导入 ${added} 条`);
+      } else {
+        items = cleaned;
+        showToast(`已导入 ${cleaned.length} 条（覆盖）`);
+      }
+      activeTag = null;
+      save();
+      render();
+    } catch (err) {
+      showToast("导入失败：文件格式不正确");
+      console.warn(err);
+    }
+  };
+  reader.readAsText(file);
+}
+
 let toastTimer = null;
 function showToast(msg) {
   const toast = $("#toast");
@@ -431,6 +535,15 @@ tagInput.addEventListener("keydown", (e) => {
 });
 tagInput.addEventListener("blur", commitTagInput);
 
+$("#themeBtn").addEventListener("click", toggleTheme);
+$("#exportBtn").addEventListener("click", exportBackup);
+$("#importBtn").addEventListener("click", () => $("#importFile").click());
+$("#importFile").addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  if (file) importBackup(file);
+  e.target.value = ""; // 允许重复导入同一文件
+});
+
 searchInput.addEventListener("input", (e) => {
   searchQuery = e.target.value.trim();
   activeTag = null;
@@ -451,4 +564,5 @@ document.addEventListener("keydown", (e) => {
 });
 
 // ---------- 启动 ----------
+initTheme();
 render();
