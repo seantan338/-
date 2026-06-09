@@ -31,6 +31,10 @@ body { transition: background 0.2s, color 0.2s; }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
+/* hidden 属性必须强制隐藏：否则会被下方 .modal-overlay/.grid/.empty
+   等作者样式里的 display 覆盖，导致弹窗关不掉、空状态错误显示 */
+[hidden] { display: none !important; }
+
 html, body { height: 100%; }
 
 body {
