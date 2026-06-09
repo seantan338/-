@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>灵感板 · 内容灵感收集</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app">
+    <!-- 侧边栏 -->
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="brand-logo">💡</span>
+        <div class="brand-text">
+          <h1>灵感板</h1>
+          <p>随手记，丝滑参考</p>
+        </div>
+      </div>
+
+      <nav class="nav" id="categoryNav"><!-- 分类由 JS 生成 --></nav>
+
+      <div class="sidebar-footer">
+        <div class="stat">
+          <span id="totalCount">0</span>
+          <small>条灵感</small>
+        </div>
+      </div>
+    </aside>
+
+    <!-- 主区域 -->
+    <main class="main">
+      <header class="topbar">
+        <div class="topbar-title">
+          <h2 id="currentTitle">全部灵感</h2>
+          <span class="count-badge" id="viewCount">0</span>
+        </div>
+        <div class="topbar-actions">
+          <div class="search-box">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="searchInput" placeholder="搜索内容或标签…" />
+          </div>
+          <button class="btn-add" id="addBtn">
+            <span>＋</span> 添加
+          </button>
+        </div>
+      </header>
+
+      <!-- 标签筛选条 -->
+      <div class="tag-filter" id="tagFilter"></div>
+
+      <!-- 卡片网格 -->
+      <section class="grid" id="cardGrid"></section>
+
+      <!-- 空状态 -->
+      <div class="empty" id="emptyState" hidden>
+        <div class="empty-emoji">🗂️</div>
+        <h3>这里还没有灵感</h3>
+        <p>看到好标题、好选题、好案例，点右上角「添加」随手丢进来。</p>
+        <button class="btn-add" id="emptyAddBtn"><span>＋</span> 添加第一条灵感</button>
+      </div>
+    </main>
+  </div>
+
+  <!-- 添加/编辑弹窗 -->
+  <div class="modal-overlay" id="modalOverlay" hidden>
+    <div class="modal" role="dialog" aria-modal="true">
+      <div class="modal-header">
+        <h3 id="modalTitle">添加灵感</h3>
+        <button class="modal-close" id="modalClose" aria-label="关闭">✕</button>
+      </div>
+      <div class="modal-body">
+        <label class="field">
+          <span class="field-label">内容</span>
+          <textarea id="contentInput" rows="4" placeholder="把好标题 / 好选题 / 好案例粘贴到这里…"></textarea>
+        </label>
+
+        <label class="field">
+          <span class="field-label">类型</span>
+          <div class="type-picker" id="typePicker"></div>
+        </label>
+
+        <label class="field">
+          <span class="field-label">标签 <small>（回车或逗号分隔）</small></span>
+          <div class="tag-input-wrap">
+            <div class="tag-chips" id="tagChips"></div>
+            <input type="text" id="tagInput" placeholder="如：爆款、情绪、对标账号…" />
+          </div>
+        </label>
+
+        <label class="field">
+          <span class="field-label">来源 / 备注 <small>（可选）</small></span>
+          <input type="text" id="sourceInput" placeholder="链接、账号或一句话说明" />
+        </label>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-ghost" id="cancelBtn">取消</button>
+        <button class="btn-primary" id="saveBtn">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" hidden></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
